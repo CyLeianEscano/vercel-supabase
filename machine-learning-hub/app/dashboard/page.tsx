@@ -14,7 +14,7 @@ export default function Dashboard() {
       if (!data.user) {
         router.push("/auth"); // not logged in, go back to login
       } else {
-        setEmail(data.user.email);
+        setEmail(data.user.email ?? null);
       }
     };
     getUser();
