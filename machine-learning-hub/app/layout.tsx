@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { NotificationProvider } from "./NotificationContext";
+import NotificationBar from "./NotificationBar";
+import { FakeBackendProvider } from "./FakeBackendContext";
+import FakeModeBanner from "./FakeModeBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +31,15 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <NotificationProvider>
+          <FakeBackendProvider>
+            <FakeModeBanner />
+            {children}
+            <NotificationBar />
+          </FakeBackendProvider>
+        </NotificationProvider>
+      </body>
     </html>
   );
 }

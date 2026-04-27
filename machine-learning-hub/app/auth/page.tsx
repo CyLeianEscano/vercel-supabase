@@ -3,9 +3,13 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { useNotifications } from "../NotificationContext";
+import { useFakeBackend } from "../FakeBackendContext";
 
 export default function AuthPage() {
   const router = useRouter();
+  const { addNotification } = useNotifications();
+  const { useFake, login: fakeLogin } = useFakeBackend();
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,28 +18,51 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
 
   const handleAuth = async () => {
+    if (!email || !password) {
+      setError("Email and password are required.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setMessage(null);
 
     try {
+      if (useFake) {
+        // Local dummy mode: no Supabase calls
+        fakeLogin(email);
+        const msg =
+          mode === "signup"
+            ? "Dummy sign-up successful (fake mode)."
+            : "Dummy login successful (fake mode).";
+        setMessage(msg);
+        addNotification("success", msg);
+        setTimeout(() => router.push("/dashboard"), 500);
+        return;
+      }
+
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage(
-          "Sign-up successful. If email confirmation is enabled, check your email."
-        );
+        const msg =
+          "Sign-up successful. If email confirmation is enabled, check your email.";
+        setMessage(msg);
+        addNotification("success", msg);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        setMessage("Login successful!");
+        const msg = "Login successful!";
+        setMessage(msg);
+        addNotification("success", msg);
         setTimeout(() => router.push("/dashboard"), 1000);
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      const msg = err.message || "Something went wrong";
+      setError(msg);
+      addNotification("error", msg);
     } finally {
       setLoading(false);
     }
